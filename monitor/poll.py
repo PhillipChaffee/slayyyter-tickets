@@ -85,50 +85,51 @@ def main(argv: list[str] | None = None) -> int:
         log.info("config.paused = true; exiting")
         return 0
 
-    latest = read_latest()
-    if not args.force and not should_poll_now(latest, now_utc):
-        log.info(
-            "skip: not due (cadence=%.2fh, last=%s)",
-            required_cadence_hours(now_utc),
-            latest.get("as_of") if latest else None,
-        )
-        return 0
+    latest_payload = read_latest()
+    poll_due = args.force or should_poll_now(latest_payload, now_utc)
 
-    clients = build_clients(cfg, secrets)
-    if not clients:
-        log.error("no enabled sources")
-        return 2
+    if poll_due:
+        clients = build_clients(cfg, secrets)
+        if not clients:
+            log.error("no enabled sources")
+            return 2
 
-    points: list[PricePoint] = []
-    for c in clients:
-        log.info("fetching %s", c.name)
-        try:
-            p = c.fetch()
-        except Exception as e:
-            log.exception("fetch failed: %s", c.name)
-            p = PricePoint.now(c.name, ok=False, error=f"unhandled: {e}")
-        log.info(
-            "  %s: ok=%s lowest=%s listings=%s err=%s",
-            c.name, p.ok, p.lowest_price, p.listing_count, p.error,
-        )
-        points.append(p)
+        points: list[PricePoint] = []
+        for c in clients:
+            log.info("fetching %s", c.name)
+            try:
+                p = c.fetch()
+            except Exception as e:
+                log.exception("fetch failed: %s", c.name)
+                p = PricePoint.now(c.name, ok=False, error=f"unhandled: {e}")
+            log.info(
+                "  %s: ok=%s lowest=%s listings=%s err=%s",
+                c.name, p.ok, p.lowest_price, p.listing_count, p.error,
+            )
+            points.append(p)
 
-    if args.dry_run:
-        log.info("[dry-run] not writing history or latest")
+        if args.dry_run:
+            log.info("[dry-run] not writing history or latest")
+            latest_payload = {
+                "as_of": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "lowest_anywhere": _ephemeral_lowest(points),
+                "by_source": {p.source: {"price": p.lowest_price, "listing_count": p.listing_count, "ok": p.ok, "ts": p.ts} for p in points},
+                "trend": {"vs_24h_ago": None, "vs_7d_median": None},
+            }
+        else:
+            append_price_points(points)
+            latest_payload = write_latest(points)
     else:
-        append_price_points(points)
+        log.info(
+            "skip fetch: not due (cadence=%.2fh, last=%s) — still evaluating time-gated alerts",
+            required_cadence_hours(now_utc),
+            latest_payload.get("as_of") if latest_payload else None,
+        )
+        if not latest_payload:
+            log.info("no latest.json yet; nothing to evaluate")
+            return 0
 
     history = read_history(since_hours=24 * 14)
-    if args.dry_run:
-        # Build latest in-memory only.
-        latest_payload = {
-            "as_of": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "lowest_anywhere": _ephemeral_lowest(points),
-            "by_source": {p.source: {"price": p.lowest_price, "listing_count": p.listing_count, "ok": p.ok, "ts": p.ts} for p in points},
-            "trend": {"vs_24h_ago": None, "vs_7d_median": None},
-        }
-    else:
-        latest_payload = write_latest(points)
 
     alert_log = read_alerts()
     alerts = evaluate(
