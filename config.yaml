@@ -18,7 +18,7 @@ sources:
     enabled: true
     url: https://www.eventticketscenter.com/slayyyter-san-francisco-09-08-2026/7808526/t
 alerts:
-  threshold_usd: 170.0
+  threshold_usd: 400.0  # TEMP: raised above current $345 floor to fire test alert; revert after
   cooldown_hours: 6
   sanity_floor_usd: 30.0
   pair_listing_count_min: 5

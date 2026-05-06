@@ -100,6 +100,20 @@ def test_threshold_single_only_when_few_listings():
     assert "threshold_pair_likely" not in rules
 
 
+def test_threshold_fires_with_unknown_signal():
+    """When SG has no data (listing_count=None), still fire single_only with QTY UNKNOWN tag."""
+    now = at_pt(2026, 5, 15, 12)
+    latest = latest_with(160.0, sg_listings=None)
+    alerts = evaluate(
+        cfg=CONFIG, latest=latest, history=[], alert_log=[], now_utc=now,
+    )
+    rules = {a.rule for a in alerts}
+    assert "threshold_single_only" in rules
+    matching = [a for a in alerts if a.rule == "threshold_single_only"][0]
+    assert "QTY UNKNOWN" in matching.title
+    assert "FLOOR HIT" in matching.body
+
+
 def test_threshold_does_not_fire_above():
     now = at_pt(2026, 8, 15, 12)
     alerts = evaluate(

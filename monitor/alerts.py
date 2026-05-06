@@ -114,17 +114,21 @@ def evaluate(
                 metadata={"lowest": lowest_price, "source": lowest["source"]},
             ))
 
-    # Rule 2: threshold single only
+    # Rule 2: threshold single only OR unknown availability
     r = rules_cfg.get("threshold_single_only") or {}
-    if r.get("enabled") and lowest_price is not None and lowest_price <= threshold_usd and signal == "SINGLE_ONLY":
+    if r.get("enabled") and lowest_price is not None and lowest_price <= threshold_usd and signal in ("SINGLE_ONLY", "UNKNOWN"):
         if not in_cooldown(_last_at("threshold_single_only", alert_log), cooldown_h, now_utc):
+            if signal == "SINGLE_ONLY":
+                headline = f"SINGLE ONLY at ${lowest_price:.0f} — fallback option, pair availability uncertain ({listing_total} total listings)"
+            else:
+                headline = f"FLOOR HIT at ${lowest_price:.0f} — pair/single availability unknown (no listing count from SG)"
             out.append(Alert(
                 rule="threshold_single_only",
-                title=f"Slayyyter ${lowest_price:.0f} [SINGLE ONLY]",
-                body=_format_body(latest, f"SINGLE ONLY at ${lowest_price:.0f} — fallback option, pair availability uncertain ({listing_total} total listings)", urls),
+                title=f"Slayyyter ${lowest_price:.0f} [SINGLE ONLY]" if signal == "SINGLE_ONLY" else f"Slayyyter ${lowest_price:.0f} [QTY UNKNOWN]",
+                body=_format_body(latest, headline, urls),
                 severity="warn",
                 urls=urls,
-                metadata={"lowest": lowest_price, "source": lowest["source"]},
+                metadata={"lowest": lowest_price, "source": lowest["source"], "signal": signal},
             ))
 
     # Rule 3: 24h drop
