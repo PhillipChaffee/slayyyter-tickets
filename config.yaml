@@ -1,0 +1,62 @@
+event:
+  name: "Slayyyter at The Regency Ballroom"
+  date_local: "2026-09-08"
+  time_local: "20:00"
+  timezone: "America/Los_Angeles"
+  venue: "The Regency Ballroom"
+  city: "San Francisco"
+
+# Set after running `python -m monitor.bootstrap`.
+sources:
+  ticketmaster:
+    enabled: true
+    event_id: null  # e.g. "G5vYZ9Xkpa-bc"
+    url: null
+  seatgeek:
+    enabled: true
+    event_id: null  # e.g. 6543210
+    url: null
+  etc_scraper:
+    enabled: false  # Phase 2: flip on if real data shows persistent gap vs APIs
+    url: null       # e.g. https://www.eventticketscenter.com/slayyyter-tickets-...
+
+alerts:
+  threshold_usd: 170.0
+  cooldown_hours: 6
+  sanity_floor_usd: 30.0       # ignore any source returning below this
+  pair_listing_count_min: 5    # >= this means "pair likely available"
+
+  rules:
+    threshold_pair_likely:
+      enabled: true
+    threshold_single_only:
+      enabled: true
+    drop_24h:
+      enabled: true
+      pct: -0.15
+      min_listings: 5
+    trend_7d:
+      enabled: true
+      pct: -0.15  # lowest_now < 0.85 * median(last_7d)
+    last_48h_backstop:
+      enabled: true
+      times_local: ["09:00", "17:00"]
+      starts_local: "2026-09-06"
+    midcampaign_checkin:
+      enabled: true
+      dates_local: ["2026-08-01", "2026-08-20"]
+      time_local: "09:00"
+    daily_heartbeat:
+      enabled: true
+      time_local: "09:00"
+    inventory_drying:
+      enabled: true
+      threshold: 10
+      starts_local: "2026-08-09"
+
+links:
+  axs_resale: "https://www.axs.com/events/745828/slayyyter-tickets"  # placeholder, update if AXS resale activates
+  ticketmaster_event: null
+  seatgeek_event: null
+
+paused: false
