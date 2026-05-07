@@ -299,11 +299,17 @@ def _median_lowest(history: list[dict], hours: float) -> float | None:
 
 
 def _is_time_match(hhmm: str, nowpt: datetime, tolerance_minutes: int = 60) -> bool:
-    """True if nowpt is within tolerance after the target HH:MM (one-sided to avoid early miss)."""
+    """True if nowpt is at or after the target HH:MM (today, in PT).
+
+    Used together with `fired_today` so that even if cron drift skips the
+    9–10 AM window entirely, the first run later in the day still catches up.
+    The `tolerance_minutes` arg is kept for backwards compat but ignored —
+    we now rely on `fired_today` for de-duplication.
+    """
+    del tolerance_minutes
     target_h, target_m = map(int, hhmm.split(":"))
     target = nowpt.replace(hour=target_h, minute=target_m, second=0, microsecond=0)
-    delta = (nowpt - target).total_seconds() / 60
-    return 0 <= delta <= tolerance_minutes
+    return nowpt >= target
 
 
 def _backstop_already_fired(alert_log: list[dict], nowpt: datetime, hhmm: str) -> bool:

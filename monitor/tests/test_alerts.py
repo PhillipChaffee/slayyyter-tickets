@@ -224,6 +224,21 @@ def test_heartbeat_does_not_fire_at_3am_pt():
     assert "daily_heartbeat" not in {a.rule for a in alerts}
 
 
+def test_heartbeat_fires_late_when_cron_drifted_past_window():
+    """Regression for missed-heartbeat-2026-05-07: even if cron drift skips
+    the natural 9–10am window, the next run later in the day must catch up.
+    Dedup is owned by fired_today, not by a tolerance window."""
+    now = at_pt(2026, 6, 1, 14)  # 2pm PT, way past historical 60min window
+    alerts = evaluate(
+        cfg=CONFIG,
+        latest=latest_with(300.0, sg_listings=20),
+        history=[],
+        alert_log=[],
+        now_utc=now,
+    )
+    assert "daily_heartbeat" in {a.rule for a in alerts}
+
+
 def test_heartbeat_only_fires_once_per_day():
     now_morning = at_pt(2026, 6, 1, 9, 5)
     log_morning = [{

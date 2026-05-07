@@ -12,11 +12,6 @@ from .alerts import Alert
 log = logging.getLogger(__name__)
 
 
-SEVERITY_PRIORITY = {
-    "info": "default",
-    "warn": "high",
-    "critical": "max",
-}
 SEVERITY_TAG = {
     "info": "loudspeaker",
     "warn": "warning",
@@ -49,25 +44,34 @@ def send_all(alerts: list[Alert], secrets: dict, dry_run: bool = False) -> list[
 
 
 def _ntfy(alert: Alert, topic: str) -> tuple[bool, str | None]:
-    headers = {
-        "Title": alert.title,
-        "Priority": SEVERITY_PRIORITY.get(alert.severity, "default"),
-        "Tags": SEVERITY_TAG.get(alert.severity, "bell"),
+    # Use JSON POST instead of header-based publish: ntfy's `Title` header is
+    # ASCII-only (HTTP-spec constraint), so titles containing em-dashes,
+    # arrows, or other Unicode crash httpx with UnicodeEncodeError. JSON
+    # body has no such restriction.
+    payload: dict = {
+        "topic": topic,
+        "title": alert.title,
+        "message": alert.body,
+        "priority": _priority_int(alert.severity),
+        "tags": [SEVERITY_TAG.get(alert.severity, "bell")],
     }
     if alert.urls:
-        headers["Click"] = alert.urls[0]
+        payload["click"] = alert.urls[0]
     try:
         with httpx.Client(timeout=15.0) as client:
-            r = client.post(
-                f"https://ntfy.sh/{topic}",
-                content=alert.body.encode("utf-8"),
-                headers=headers,
-            )
+            r = client.post("https://ntfy.sh/", json=payload)
         r.raise_for_status()
         return True, None
     except httpx.HTTPError as e:
         log.warning("ntfy delivery failed: %s", e)
         return False, str(e)
+
+
+_NTFY_PRIORITY_INT = {"info": 3, "warn": 4, "critical": 5}
+
+
+def _priority_int(severity: str) -> int:
+    return _NTFY_PRIORITY_INT.get(severity, 3)
 
 
 def _smtp(alert: Alert, secrets: dict) -> tuple[bool, str | None]:
