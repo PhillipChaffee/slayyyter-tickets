@@ -90,3 +90,31 @@ def test_etc_disabled_short_circuits():
     p = scraper.fetch()
     assert not p.ok
     assert p.error == "disabled in config"
+
+
+def test_etc_parse_finds_offer_nested_in_graph():
+    """Regression: many sites wrap Event in @graph; offer extraction must recurse."""
+    scraper = EtcScraper({"enabled": True, "url": "https://example.com"}, {})
+    html = """<html><head>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+  {"@type":"BreadcrumbList"},
+  {"@type":"Event","name":"X","offers":{"@type":"AggregateOffer","lowPrice":199.0,"highPrice":480.0,"priceCurrency":"USD"}}
+]}
+</script></head></html>"""
+    p = scraper._parse(html)
+    assert p.ok
+    assert p.lowest_price == 199.0
+    assert p.highest_price == 480.0
+
+
+def test_etc_parse_finds_offer_in_subevent():
+    """Some sites put offers under subEvent."""
+    scraper = EtcScraper({"enabled": True, "url": "https://example.com"}, {})
+    html = """<script type="application/ld+json">
+{"@type":"Event","name":"Tour",
+ "subEvent":[{"@type":"Event","offers":{"lowPrice":250,"priceCurrency":"USD"}}]}
+</script>"""
+    p = scraper._parse(html)
+    assert p.ok
+    assert p.lowest_price == 250.0

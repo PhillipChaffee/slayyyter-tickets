@@ -61,6 +61,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/
           git commit -m "data: poll @ $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          # Retry-once on race with another concurrent run.
-          git pull --rebase --autostash || true
+          # Retry-once on race with a concurrent run. concurrency.group already
+          # serializes, so this should rarely trigger.
+          git pull --rebase --autostash
           git push

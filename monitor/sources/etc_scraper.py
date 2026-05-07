@@ -61,25 +61,44 @@ class EtcScraper(SourceClient):
                 payload = json.loads(block.strip())
             except json.JSONDecodeError:
                 continue
-            candidates = payload if isinstance(payload, list) else [payload]
-            for entry in candidates:
-                offers = entry.get("offers") if isinstance(entry, dict) else None
-                if not offers:
+            for offer in _extract_offers(payload):
+                low = offer.get("lowPrice") or offer.get("price")
+                if low is None:
                     continue
-                offers = offers if isinstance(offers, list) else [offers]
-                for offer in offers:
-                    low = offer.get("lowPrice") or offer.get("price")
-                    high = offer.get("highPrice")
-                    if low is None:
-                        continue
-                    return PricePoint.now(
-                        self.name,
-                        lowest_price=float(low),
-                        highest_price=float(high) if high else None,
-                        currency=offer.get("priceCurrency", "USD"),
-                        ok=True,
-                    )
+                high = offer.get("highPrice")
+                return PricePoint.now(
+                    self.name,
+                    lowest_price=float(low),
+                    highest_price=float(high) if high else None,
+                    currency=offer.get("priceCurrency", "USD"),
+                    ok=True,
+                )
         return PricePoint.now(self.name, ok=False, error="no JSON-LD offer found")
 
     def event_url(self) -> str | None:
         return self.config.get("url")
+
+
+def _extract_offers(node) -> list[dict]:
+    """Recurse a parsed JSON-LD node and collect every dict that looks like an offer.
+
+    Handles cases where the Event is nested inside `@graph`, `mainEntity`,
+    `itemListElement`, or wrapped in arrays.
+    """
+    out: list[dict] = []
+    if isinstance(node, list):
+        for item in node:
+            out.extend(_extract_offers(item))
+        return out
+    if not isinstance(node, dict):
+        return out
+    offers = node.get("offers")
+    if offers:
+        offers_list = offers if isinstance(offers, list) else [offers]
+        for o in offers_list:
+            if isinstance(o, dict):
+                out.append(o)
+    for nested_key in ("@graph", "mainEntity", "itemListElement", "subEvent"):
+        if nested_key in node:
+            out.extend(_extract_offers(node[nested_key]))
+    return out

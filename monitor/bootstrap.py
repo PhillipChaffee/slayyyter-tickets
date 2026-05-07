@@ -18,10 +18,14 @@ from .sources.ticketmaster import TicketmasterClient
 
 
 def search_tm(api_key: str, keyword: str, date_iso: str) -> list[dict]:
-    start = f"{date_iso}T00:00:00Z"
-    end = f"{date_iso}T23:59:59Z"
+    # Use TM's localStartDateTime / localEndDateTime (no timezone) so a
+    # late-evening show isn't pushed past the UTC end-of-day boundary.
     return TicketmasterClient.search(
-        api_key, keyword, startDateTime=start, endDateTime=end, size="50"
+        api_key,
+        keyword,
+        localStartDateTime=f"{date_iso}T00:00:00",
+        localEndDateTime=f"{date_iso}T23:59:59",
+        size="50",
     )
 
 
@@ -29,6 +33,18 @@ def search_sg(client_id: str, q: str, date_iso: str) -> list[dict]:
     return SeatGeekClient.search(
         client_id, q, **{"datetime_local.gte": date_iso, "datetime_local.lte": date_iso}
     )
+
+
+def matches_venue(venue_name: str, target_venue: str | None, target_city: str | None) -> bool:
+    """Heuristic: venue name contains target venue OR target city (case-insensitive)."""
+    if not venue_name:
+        return False
+    name = venue_name.lower()
+    if target_venue and target_venue.lower() in name:
+        return True
+    if target_city and target_city.lower() in name:
+        return True
+    return False
 
 
 def pick(prompt: str, items: list[tuple[str, str, str]]) -> int | None:
@@ -67,8 +83,10 @@ def main() -> int:
     secrets = load_secrets()
     keyword = args.keyword or cfg["event"]["name"].split(" at ")[0]
     date_iso = args.date or cfg["event"]["date_local"]
+    target_venue = cfg["event"].get("venue")
+    target_city = cfg["event"].get("city")
 
-    print(f"Searching for: keyword={keyword!r} date={date_iso}")
+    print(f"Searching for: keyword={keyword!r} date={date_iso} venue~{target_venue!r} city~{target_city!r}")
 
     # Ticketmaster
     if cfg["sources"]["ticketmaster"]["enabled"]:
@@ -82,11 +100,17 @@ def main() -> int:
                 print(f"\n[ticketmaster] error: {e}")
                 events = []
             cands = []
+            cand_events = []
             for e in events:
+                venue_name = e.get("_embedded", {}).get("venues", [{}])[0].get("name", "")
+                if target_venue and not matches_venue(venue_name, target_venue, target_city):
+                    continue
                 ts = e.get("dates", {}).get("start", {}).get("localDate", "?")
-                name = e.get("name", "?")
+                name = e.get("name", "?") + (f" @ {venue_name}" if venue_name else "")
                 eid = e.get("id", "?")
                 cands.append((eid, name, ts))
+                cand_events.append(e)
+            events = cand_events  # only these are valid for url extraction below
             idx = (
                 0
                 if args.auto and len(cands) == 1
@@ -111,11 +135,17 @@ def main() -> int:
                 print(f"\n[seatgeek] error: {e}")
                 events = []
             cands = []
+            cand_events = []
             for e in events:
+                venue_name = e.get("venue", {}).get("name", "")
+                if target_venue and not matches_venue(venue_name, target_venue, target_city):
+                    continue
                 ts = e.get("datetime_local", "?")
-                name = e.get("title", "?")
+                name = e.get("title", "?") + (f" @ {venue_name}" if venue_name else "")
                 eid = str(e.get("id", "?"))
                 cands.append((eid, name, ts))
+                cand_events.append(e)
+            events = cand_events
             idx = (
                 0
                 if args.auto and len(cands) == 1

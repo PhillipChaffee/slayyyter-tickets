@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from .alerts import evaluate
@@ -24,28 +24,42 @@ from .storage import (
 
 
 PACIFIC = ZoneInfo("America/Los_Angeles")
+DEFAULT_EVENT_DATE = date(2026, 9, 8)
 
 
-def required_cadence_hours(now_utc: datetime) -> float:
-    """Return the required polling cadence in hours for the given moment (PT-relative)."""
-    d = now_utc.astimezone(PACIFIC).date()
-    if d == date(2026, 9, 8):
+def required_cadence_hours(now_utc: datetime, event_date: date = DEFAULT_EVENT_DATE) -> float:
+    """Polling cadence in hours, computed relative to the event date.
+
+    Schedule (PT-local):
+      - show day:                      every 15 min
+      - 1-7 days before show:          every 30 min
+      - transfer-unlock day (-30):     every 15 min
+      - between unlock and final week: every 1 hour
+      - 8 days before unlock to unlock-1: every 2 hours
+      - everything earlier:            every 6 hours
+    """
+    today = now_utc.astimezone(PACIFIC).date()
+    transfer_unlock = event_date - timedelta(days=30)
+    pre_unlock_window_start = transfer_unlock - timedelta(days=8)
+
+    if today >= event_date:
         return 0.25
-    if date(2026, 9, 1) <= d <= date(2026, 9, 7):
+    days_until = (event_date - today).days
+    if 1 <= days_until <= 7:
         return 0.5
-    if d == date(2026, 8, 9):
+    if today == transfer_unlock:
         return 0.25
-    if date(2026, 8, 10) <= d <= date(2026, 8, 31):
+    if transfer_unlock < today < event_date - timedelta(days=7):
         return 1.0
-    if date(2026, 8, 1) <= d <= date(2026, 8, 8):
+    if pre_unlock_window_start <= today < transfer_unlock:
         return 2.0
     return 6.0
 
 
-def should_poll_now(latest: dict | None, now_utc: datetime) -> bool:
+def should_poll_now(latest: dict | None, now_utc: datetime, event_date: date = DEFAULT_EVENT_DATE) -> bool:
     if latest is None:
         return True
-    cadence_h = required_cadence_hours(now_utc)
+    cadence_h = required_cadence_hours(now_utc, event_date)
     last = datetime.strptime(latest["as_of"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     elapsed_h = (now_utc - last).total_seconds() / 3600
     # Allow 15 min slop for cron drift.
@@ -80,13 +94,14 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config()
     secrets = load_secrets()
     now_utc = datetime.now(timezone.utc)
+    event_date = date.fromisoformat(cfg["event"]["date_local"])
 
     if cfg.get("paused"):
         log.info("config.paused = true; exiting")
         return 0
 
     latest_payload = read_latest()
-    poll_due = args.force or should_poll_now(latest_payload, now_utc)
+    poll_due = args.force or should_poll_now(latest_payload, now_utc, event_date)
 
     if poll_due:
         clients = build_clients(cfg, secrets)
@@ -121,8 +136,8 @@ def main(argv: list[str] | None = None) -> int:
             latest_payload = write_latest(points)
     else:
         log.info(
-            "skip fetch: not due (cadence=%.2fh, last=%s) — still evaluating time-gated alerts",
-            required_cadence_hours(now_utc),
+            "skip fetch: not due (cadence=%.2fh, last=%s) - still evaluating time-gated alerts",
+            required_cadence_hours(now_utc, event_date),
             latest_payload.get("as_of") if latest_payload else None,
         )
         if not latest_payload:

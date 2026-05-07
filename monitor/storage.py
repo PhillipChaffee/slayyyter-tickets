@@ -135,12 +135,3 @@ def read_alerts() -> list[dict]:
         return []
     with open(ALERTS_PATH) as f:
         return json.load(f)
-
-
-def last_alert_at(rule_name: str) -> datetime | None:
-    alerts = read_alerts()
-    matches = [a for a in alerts if a.get("rule") == rule_name]
-    if not matches:
-        return None
-    last_ts = max(a["ts"] for a in matches)
-    return datetime.strptime(last_ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)

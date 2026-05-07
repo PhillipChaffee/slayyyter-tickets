@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta, timezone, tzinfo
+from datetime import date, datetime, timedelta, timezone
 from statistics import median
 from zoneinfo import ZoneInfo
 
@@ -187,13 +187,13 @@ def evaluate(
                         "threshold_pair_likely", alert_log, now_utc - timedelta(days=14)
                     )
                     body_pre = (
-                        "Threshold $170 has been hit; this is just a redundant heads-up."
+                        f"Threshold ${threshold_usd:.0f} has been hit; this is just a redundant heads-up."
                         if threshold_already_hit
-                        else f"Threshold $170 NOT yet hit. Best price right now is ${lowest_price:.0f}." if lowest_price else "No live price data."
+                        else f"Threshold ${threshold_usd:.0f} NOT yet hit. Best price right now is ${lowest_price:.0f}." if lowest_price else "No live price data."
                     )
                     out.append(Alert(
                         rule="last_48h_backstop",
-                        title=f"BACKSTOP {hhmm} PT — best now: ${lowest_price:.0f}" if lowest_price else f"BACKSTOP {hhmm} PT",
+                        title=f"BACKSTOP {hhmm} PT - best now: ${lowest_price:.0f}" if lowest_price else f"BACKSTOP {hhmm} PT",
                         body=body_pre + "\n\n" + _format_body(latest, "Buy or skip.", urls),
                         severity="critical",
                         urls=urls,
@@ -212,7 +212,7 @@ def evaluate(
                         title=f"Mid-campaign check-in ({ds})",
                         body=(
                             f"Current floor: ${lowest_price:.0f}\n" if lowest_price else "No live price data.\n"
-                        ) + f"Threshold $170 still active. Edit config.yaml + push to revise.\n\n" + _format_body(latest, "", urls),
+                        ) + f"Threshold ${threshold_usd:.0f} still active. Edit config.yaml + push to revise.\n\n" + _format_body(latest, "", urls),
                         severity="info",
                         urls=urls,
                         metadata={"checkin_date": ds, "lowest": lowest_price},
@@ -344,8 +344,10 @@ def _format_body(latest: dict, headline: str, urls: list[str]) -> str:
             lines.append(
                 f"  {src}: ${v['price']:.0f}" + (f" ({lc} listings)" if lc is not None else "")
             )
+        elif v.get("ok"):
+            lines.append(f"  {src}: no listings yet")
         else:
-            lines.append(f"  {src}: —")
+            lines.append(f"  {src}: error")
     trend = latest.get("trend") or {}
     if trend.get("vs_24h_ago") is not None:
         lines.append(f"  vs 24h ago: {trend['vs_24h_ago'] * 100:+.1f}%")

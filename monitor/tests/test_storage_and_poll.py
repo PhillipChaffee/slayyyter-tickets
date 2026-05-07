@@ -76,20 +76,39 @@ def test_required_cadence_hours_phases():
     from zoneinfo import ZoneInfo
 
     pt = ZoneInfo("America/Los_Angeles")
+    event = date(2026, 9, 8)
 
     def utc(y, mo, d, h=12):
         return datetime(y, mo, d, h, tzinfo=pt).astimezone(timezone.utc)
 
-    assert poll.required_cadence_hours(utc(2026, 5, 6)) == 6.0
-    assert poll.required_cadence_hours(utc(2026, 7, 31)) == 6.0
-    assert poll.required_cadence_hours(utc(2026, 8, 1)) == 2.0
-    assert poll.required_cadence_hours(utc(2026, 8, 8)) == 2.0
-    assert poll.required_cadence_hours(utc(2026, 8, 9)) == 0.25
-    assert poll.required_cadence_hours(utc(2026, 8, 10)) == 1.0
-    assert poll.required_cadence_hours(utc(2026, 8, 31)) == 1.0
-    assert poll.required_cadence_hours(utc(2026, 9, 1)) == 0.5
-    assert poll.required_cadence_hours(utc(2026, 9, 7)) == 0.5
-    assert poll.required_cadence_hours(utc(2026, 9, 8)) == 0.25
+    assert poll.required_cadence_hours(utc(2026, 5, 6), event) == 6.0
+    assert poll.required_cadence_hours(utc(2026, 7, 31), event) == 6.0
+    assert poll.required_cadence_hours(utc(2026, 8, 1), event) == 2.0
+    assert poll.required_cadence_hours(utc(2026, 8, 8), event) == 2.0
+    assert poll.required_cadence_hours(utc(2026, 8, 9), event) == 0.25
+    assert poll.required_cadence_hours(utc(2026, 8, 10), event) == 1.0
+    assert poll.required_cadence_hours(utc(2026, 8, 31), event) == 1.0
+    assert poll.required_cadence_hours(utc(2026, 9, 1), event) == 0.5
+    assert poll.required_cadence_hours(utc(2026, 9, 7), event) == 0.5
+    assert poll.required_cadence_hours(utc(2026, 9, 8), event) == 0.25
+
+
+def test_required_cadence_hours_shifts_with_event_date():
+    """If event moves to a different date, the cadence schedule shifts with it."""
+    from datetime import date, timezone
+    from zoneinfo import ZoneInfo
+
+    pt = ZoneInfo("America/Los_Angeles")
+    event = date(2026, 12, 1)  # shifted to Dec 1
+
+    def utc(y, mo, d, h=12):
+        return datetime(y, mo, d, h, tzinfo=pt).astimezone(timezone.utc)
+
+    transfer_unlock = date(2026, 11, 1)  # Dec 1 - 30 days
+    assert poll.required_cadence_hours(utc(2026, 11, 1), event) == 0.25  # unlock day
+    assert poll.required_cadence_hours(utc(2026, 11, 2), event) == 1.0   # post-unlock
+    assert poll.required_cadence_hours(utc(2026, 11, 25), event) == 0.5  # final week
+    assert poll.required_cadence_hours(utc(2026, 12, 1), event) == 0.25  # show day
 
 
 def test_should_poll_now_first_run():
