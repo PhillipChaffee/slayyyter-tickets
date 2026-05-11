@@ -134,5 +134,23 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-05-11T15:47:23Z",
+    "rule": "trend_7d",
+    "severity": "info",
+    "title": "Slayyyter $350 (vs 7d median $498, -30%)",
+    "metadata": {
+      "lowest": 350.0,
+      "median_7d": 498.0,
+      "pct": -0.2971887550200803
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
