@@ -73,3 +73,6 @@
 {"ts":"2026-05-12T07:56:18Z","source":"ticketmaster","event_id":"Z7r9jZ1A7xvZS","lowest_price":null,"highest_price":null,"average_price":null,"listing_count":null,"currency":"USD","ok":true,"error":"no priceRanges"}
 {"ts":"2026-05-12T07:56:18Z","source":"seatgeek","event_id":"18131145","lowest_price":null,"highest_price":null,"average_price":null,"listing_count":null,"currency":"USD","ok":true,"error":"no listings"}
 {"ts":"2026-05-12T07:56:19Z","source":"etc_scraper","event_id":null,"lowest_price":350.0,"highest_price":1062.0,"average_price":null,"listing_count":null,"currency":"USD","ok":true,"error":null}
+{"ts":"2026-05-12T13:56:46Z","source":"ticketmaster","event_id":"Z7r9jZ1A7xvZS","lowest_price":null,"highest_price":null,"average_price":null,"listing_count":null,"currency":"USD","ok":true,"error":"no priceRanges"}
+{"ts":"2026-05-12T13:56:46Z","source":"seatgeek","event_id":"18131145","lowest_price":null,"highest_price":null,"average_price":null,"listing_count":null,"currency":"USD","ok":true,"error":"no listings"}
+{"ts":"2026-05-12T13:56:46Z","source":"etc_scraper","event_id":null,"lowest_price":350.0,"highest_price":1062.0,"average_price":null,"listing_count":null,"currency":"USD","ok":true,"error":null}
