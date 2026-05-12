@@ -61,4 +61,7 @@ links:
   axs_resale: https://www.axs.com/events/745828/slayyyter-tickets
   ticketmaster_event: https://www.ticketmaster.com/event/Z7r9jZ1A7xvZS
   seatgeek_event: https://seatgeek.com/slayyyter-tickets/san-francisco-california-the-regency-ballroom-2026-09-08-8-pm/concert/18131145
+forecast:
+  best_buy_day_offset_days: 0  # 0 = day-of-show. Negative biases earlier (e.g. -2 = Sep 6).
+
 paused: false

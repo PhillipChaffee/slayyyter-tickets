@@ -236,12 +236,14 @@ def evaluate(
                 for s, v in (latest or {}).get("by_source", {}).items()
                 if v.get("price") is not None
             ) or "no live prices"
+            forecast = _forecast_block(cfg, history, now_utc)
             manual_block = _manual_check_block(cfg)
             out.append(Alert(
                 rule="daily_heartbeat",
                 title=f"Heartbeat {nowpt.date().isoformat()} — floor ${lowest_price:.0f}" if lowest_price else f"Heartbeat {nowpt.date().isoformat()}",
                 body=(
-                    f"Sources: {sources_summary}\n\n"
+                    forecast
+                    + f"Sources: {sources_summary}\n\n"
                     + manual_block
                     + _format_body(latest, "", urls)
                 ),
@@ -344,6 +346,72 @@ def _build_urls(cfg: dict, latest: dict) -> list[str]:
         if u:
             urls.append(u)
     return urls
+
+
+def _days_human(n: int) -> str:
+    if n == 0:
+        return "today"
+    if n == 1:
+        return "tomorrow"
+    if n == -1:
+        return "yesterday"
+    if n < 0:
+        return f"{abs(n)}d ago"
+    return f"{n}d away"
+
+
+def _forecast_block(cfg: dict, history: list[dict], now_utc: datetime) -> str:
+    """Compact buy-timing context for the daily heartbeat.
+
+    Three to four short lines:
+      - Show date + countdown
+      - Best buy day (configurable offset from event_date, default = day-of-show)
+      - Next inflection (transfer unlock OR buy window start OR "in buy window")
+      - Lowest price observed in the history window
+    """
+    event_date = date.fromisoformat(cfg["event"]["date_local"])
+    today = now_pt(now_utc).date()
+    transfer_unlock = event_date - timedelta(days=30)
+    buy_window_start = event_date - timedelta(days=7)
+
+    offset = int(cfg.get("forecast", {}).get("best_buy_day_offset_days", 0))
+    best_buy = event_date + timedelta(days=offset)
+
+    lines: list[str] = []
+    lines.append(f"Show: {event_date.isoformat()} ({_days_human((event_date - today).days)})")
+
+    days_to_best = (best_buy - today).days
+    if days_to_best >= 0:
+        why = "historical day-of-show bottom" if offset == 0 else f"day-of-show {offset:+d}d"
+        lines.append(f"Best buy day: {best_buy.isoformat()} ({_days_human(days_to_best)}) — {why}")
+
+    if today < transfer_unlock:
+        lines.append(
+            f"Next inflection: transfer unlock on {transfer_unlock.isoformat()} "
+            f"({_days_human((transfer_unlock - today).days)}) — expect price dump"
+        )
+    elif today == transfer_unlock:
+        lines.append("In transfer unlock window — high price volatility expected")
+    elif today < buy_window_start:
+        lines.append(
+            f"Next inflection: buy window opens {buy_window_start.isoformat()} "
+            f"({_days_human((buy_window_start - today).days)})"
+        )
+    elif today < event_date:
+        lines.append(f"In buy window — bottom typically day-of-show ({_days_human((event_date - today).days)})")
+    else:
+        lines.append("Show today — last call")
+
+    ok_prices = [
+        (r["lowest_price"], r["ts"][:10])
+        for r in history
+        if r.get("ok") and r.get("lowest_price") is not None
+    ]
+    if ok_prices:
+        low_p, low_d = min(ok_prices, key=lambda pd: pd[0])
+        lines.append(f"Lowest seen (14d): ${low_p:.0f} on {low_d}")
+
+    return "\n".join(lines) + "\n\n"
 
 
 def _manual_check_block(cfg: dict) -> str:

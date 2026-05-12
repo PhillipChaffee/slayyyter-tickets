@@ -4,6 +4,7 @@ import pytest
 
 from monitor.alerts import (
     PACIFIC,
+    _forecast_block,
     evaluate,
     fired_today,
     in_cooldown,
@@ -356,6 +357,62 @@ def test_paused_short_circuits():
         now_utc=now,
     )
     assert alerts == []
+
+
+def test_forecast_block_idle_baseline():
+    """Way before transfer unlock — should point at transfer unlock as next inflection."""
+    now = at_pt(2026, 5, 12, 9)
+    block = _forecast_block(CONFIG, history=[], now_utc=now)
+    assert "Show: 2026-09-08" in block
+    assert "119d away" in block or "118d away" in block  # depending on PT date
+    assert "Best buy day: 2026-09-08" in block
+    assert "transfer unlock on 2026-08-09" in block
+    assert "expect price dump" in block
+
+
+def test_forecast_block_on_transfer_unlock_day():
+    now = at_pt(2026, 8, 9, 9)
+    block = _forecast_block(CONFIG, history=[], now_utc=now)
+    assert "In transfer unlock window" in block
+
+
+def test_forecast_block_post_unlock_pre_buy_window():
+    now = at_pt(2026, 8, 20, 9)
+    block = _forecast_block(CONFIG, history=[], now_utc=now)
+    assert "buy window opens 2026-09-01" in block
+
+
+def test_forecast_block_in_buy_window():
+    now = at_pt(2026, 9, 4, 9)
+    block = _forecast_block(CONFIG, history=[], now_utc=now)
+    assert "In buy window" in block
+    assert "day-of-show" in block
+
+
+def test_forecast_block_show_day():
+    now = at_pt(2026, 9, 8, 9)
+    block = _forecast_block(CONFIG, history=[], now_utc=now)
+    assert "Show today" in block
+    assert "Best buy day: 2026-09-08 (today)" in block
+
+
+def test_forecast_block_with_offset_shifts_best_buy_day():
+    cfg = {**CONFIG, "forecast": {"best_buy_day_offset_days": -2}}
+    now = at_pt(2026, 5, 12, 9)
+    block = _forecast_block(cfg, history=[], now_utc=now)
+    assert "Best buy day: 2026-09-06" in block
+    assert "day-of-show -2d" in block
+
+
+def test_forecast_block_includes_lowest_seen_from_history():
+    now = at_pt(2026, 5, 12, 9)
+    history = [
+        {"ts": "2026-05-10T12:00:00Z", "lowest_price": 350.0, "ok": True},
+        {"ts": "2026-05-11T12:00:00Z", "lowest_price": 320.0, "ok": True},
+        {"ts": "2026-05-12T08:00:00Z", "lowest_price": 335.0, "ok": True},
+    ]
+    block = _forecast_block(CONFIG, history=history, now_utc=now)
+    assert "Lowest seen (14d): $320 on 2026-05-11" in block
 
 
 def test_in_cooldown_logic():
