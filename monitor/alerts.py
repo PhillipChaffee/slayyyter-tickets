@@ -232,9 +232,10 @@ def evaluate(
         nowpt = now_pt(now_utc)
         if _is_time_match(r.get("time_local", "09:00"), nowpt) and not fired_today("daily_heartbeat", alert_log, now_utc):
             sources_summary = ", ".join(
-                f"{s}=${v.get('price'):.0f}" if v.get("price") else f"{s}=NA"
+                f"{s}=${v.get('price'):.0f}"
                 for s, v in (latest or {}).get("by_source", {}).items()
-            )
+                if v.get("price") is not None
+            ) or "no live prices"
             manual_block = _manual_check_block(cfg)
             out.append(Alert(
                 rule="daily_heartbeat",
@@ -335,8 +336,10 @@ def _backstop_already_fired(alert_log: list[dict], nowpt: datetime, hhmm: str) -
 
 
 def _build_urls(cfg: dict, latest: dict) -> list[str]:
+    # TM and SG live in the MANUAL CHECK block. Per-alert URLs are just
+    # the sources we actually pull price data from.
     urls = []
-    for name in ("ticketmaster", "seatgeek", "vivid_seats", "etc_scraper"):
+    for name in ("vivid_seats", "etc_scraper"):
         u = cfg.get("sources", {}).get(name, {}).get("url")
         if u:
             urls.append(u)
@@ -369,16 +372,17 @@ def _format_body(latest: dict, headline: str, urls: list[str]) -> str:
         return headline
     lines = [headline] if headline else []
     for src, v in (latest or {}).get("by_source", {}).items():
+        # TM/SG never produce useful data via public APIs — surfaced in
+        # the heartbeat's MANUAL CHECK block instead. Skip here to reduce noise.
+        if src in _NO_API_SOURCES and v.get("price") is None:
+            continue
         if v.get("price") is not None:
             lc = v.get("listing_count")
             lines.append(
                 f"  {src}: ${v['price']:.0f}" + (f" ({lc} listings)" if lc is not None else "")
             )
         elif v.get("ok"):
-            if src in _NO_API_SOURCES:
-                lines.append(f"  {src}: not exposed via public API")
-            else:
-                lines.append(f"  {src}: no listings yet")
+            lines.append(f"  {src}: no listings yet")
         else:
             lines.append(f"  {src}: error")
     trend = latest.get("trend") or {}
