@@ -1,6 +1,7 @@
 from monitor.sources.etc_scraper import EtcScraper
 from monitor.sources.seatgeek import SeatGeekClient
 from monitor.sources.ticketmaster import TicketmasterClient
+from monitor.sources.vivid_seats import VividSeatsClient
 
 
 def test_tm_parse_basic():
@@ -90,6 +91,66 @@ def test_etc_disabled_short_circuits():
     p = scraper.fetch()
     assert not p.ok
     assert p.error == "disabled in config"
+
+
+def test_vivid_parse_uses_aip_when_show_aip_true():
+    """When showAip is true, use minAipPrice (all-in) so it matches the user's checkout price."""
+    client = VividSeatsClient({"enabled": True, "production_id": 6790581}, {})
+    data = {
+        "id": 6790581,
+        "minPrice": 245.98,
+        "maxPrice": 528,
+        "avgPrice": 367.47,
+        "minAipPrice": 334.55,
+        "maxAipPrice": 714.94,
+        "showAip": True,
+        "listingCount": 15,
+        "ticketCount": 43,
+    }
+    p = client._parse("6790581", data)
+    assert p.ok
+    assert p.lowest_price == 334.55
+    assert p.highest_price == 714.94
+    assert p.average_price == 367.47
+    assert p.listing_count == 15
+
+
+def test_vivid_parse_falls_back_to_minPrice_without_aip():
+    client = VividSeatsClient({"enabled": True, "production_id": 6790581}, {})
+    data = {
+        "minPrice": 245.98,
+        "maxPrice": 528,
+        "showAip": False,
+        "listingCount": 10,
+    }
+    p = client._parse("6790581", data)
+    assert p.ok
+    assert p.lowest_price == 245.98
+    assert p.highest_price == 528
+
+
+def test_vivid_parse_no_listings():
+    client = VividSeatsClient({"enabled": True, "production_id": 6790581}, {})
+    data = {"minPrice": None, "listingCount": 0}
+    p = client._parse("6790581", data)
+    assert p.ok
+    assert p.lowest_price is None
+    assert p.listing_count == 0
+    assert p.error == "no listings"
+
+
+def test_vivid_disabled_short_circuits():
+    client = VividSeatsClient({"enabled": False, "production_id": 1}, {})
+    p = client.fetch()
+    assert not p.ok
+    assert p.error == "disabled in config"
+
+
+def test_vivid_missing_production_id():
+    client = VividSeatsClient({"enabled": True}, {})
+    p = client.fetch()
+    assert not p.ok
+    assert "production_id" in p.error
 
 
 def test_etc_parse_finds_offer_nested_in_graph():

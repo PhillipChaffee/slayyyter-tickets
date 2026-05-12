@@ -72,6 +72,22 @@ def test_pair_signal_thresholds():
     assert pair_signal(latest_with(150.0, sg_listings=None), 5) == "UNKNOWN"
 
 
+def test_pair_signal_falls_back_to_vivid_when_sg_missing():
+    latest = latest_with(150.0, sg_listings=None)
+    latest["by_source"]["vivid_seats"] = {
+        "price": 150.0, "ok": True, "ts": "2026-05-12T12:00:00Z", "listing_count": 15,
+    }
+    assert pair_signal(latest, 5) == "PAIR_LIKELY"
+
+
+def test_pair_signal_falls_back_to_vivid_for_single_only():
+    latest = latest_with(150.0, sg_listings=None)
+    latest["by_source"]["vivid_seats"] = {
+        "price": 150.0, "ok": True, "ts": "2026-05-12T12:00:00Z", "listing_count": 2,
+    }
+    assert pair_signal(latest, 5) == "SINGLE_ONLY"
+
+
 def test_threshold_pair_likely_fires_when_under():
     now = at_pt(2026, 8, 15, 12)  # not heartbeat hour
     alerts = evaluate(

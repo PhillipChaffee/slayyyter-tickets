@@ -14,6 +14,10 @@ sources:
     enabled: true
     event_id: 18131145
     url: https://seatgeek.com/slayyyter-tickets/san-francisco-california-the-regency-ballroom-2026-09-08-8-pm/concert/18131145
+  vivid_seats:
+    enabled: true
+    production_id: 6790581
+    url: https://www.vividseats.com/slayyyter-tickets-san-francisco-the-regency-ballroom-9-8-2026/production/6790581
   etc_scraper:
     enabled: true
     url: https://www.eventticketscenter.com/slayyyter-san-francisco-09-08-2026/7808526/t

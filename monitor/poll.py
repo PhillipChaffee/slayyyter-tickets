@@ -13,6 +13,7 @@ from .sources.base import PricePoint, SourceClient
 from .sources.etc_scraper import EtcScraper
 from .sources.seatgeek import SeatGeekClient
 from .sources.ticketmaster import TicketmasterClient
+from .sources.vivid_seats import VividSeatsClient
 from .storage import (
     append_alert,
     append_price_points,
@@ -73,6 +74,8 @@ def build_clients(cfg: dict, secrets: dict) -> list[SourceClient]:
         clients.append(TicketmasterClient(s["ticketmaster"], secrets))
     if s.get("seatgeek", {}).get("enabled"):
         clients.append(SeatGeekClient(s["seatgeek"], secrets))
+    if s.get("vivid_seats", {}).get("enabled"):
+        clients.append(VividSeatsClient(s["vivid_seats"], secrets))
     if s.get("etc_scraper", {}).get("enabled"):
         clients.append(EtcScraper(s["etc_scraper"], secrets))
     return clients

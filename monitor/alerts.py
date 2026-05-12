@@ -23,19 +23,27 @@ def now_pt(now_utc: datetime | None = None) -> datetime:
     return (now_utc or datetime.now(timezone.utc)).astimezone(PACIFIC)
 
 
+_LISTING_COUNT_SOURCES = ("seatgeek", "vivid_seats")
+
+
 def pair_signal(latest: dict, threshold_listings: int) -> str:
-    """Return PAIR_LIKELY | SINGLE_ONLY | UNKNOWN based on SeatGeek listing_count."""
-    sg = latest.get("by_source", {}).get("seatgeek") or {}
-    count = sg.get("listing_count")
-    if count is None:
-        return "UNKNOWN"
-    return "PAIR_LIKELY" if count >= threshold_listings else "SINGLE_ONLY"
+    """Return PAIR_LIKELY | SINGLE_ONLY | UNKNOWN based on the first source that reports a listing count."""
+    sources = latest.get("by_source", {})
+    for src_name in _LISTING_COUNT_SOURCES:
+        count = (sources.get(src_name) or {}).get("listing_count")
+        if count is not None:
+            return "PAIR_LIKELY" if count >= threshold_listings else "SINGLE_ONLY"
+    return "UNKNOWN"
 
 
 def total_listings(latest: dict) -> int | None:
-    """Best-known total listing count (currently only SG reports it)."""
-    sg = latest.get("by_source", {}).get("seatgeek") or {}
-    return sg.get("listing_count")
+    """Best-known total listing count from sources that report it."""
+    sources = latest.get("by_source", {})
+    for src_name in _LISTING_COUNT_SOURCES:
+        count = (sources.get(src_name) or {}).get("listing_count")
+        if count is not None:
+            return count
+    return None
 
 
 def in_cooldown(last_at: datetime | None, cooldown_hours: float, now_utc: datetime) -> bool:
@@ -227,12 +235,13 @@ def evaluate(
                 f"{s}=${v.get('price'):.0f}" if v.get("price") else f"{s}=NA"
                 for s, v in (latest or {}).get("by_source", {}).items()
             )
+            manual_block = _manual_check_block(cfg)
             out.append(Alert(
                 rule="daily_heartbeat",
                 title=f"Heartbeat {nowpt.date().isoformat()} — floor ${lowest_price:.0f}" if lowest_price else f"Heartbeat {nowpt.date().isoformat()}",
                 body=(
-                    f"Sources: {sources_summary}\n"
-                    f"AXS resale check: {cfg.get('links', {}).get('axs_resale') or 'n/a'}\n\n"
+                    f"Sources: {sources_summary}\n\n"
+                    + manual_block
                     + _format_body(latest, "", urls)
                 ),
                 severity="info",
@@ -327,11 +336,32 @@ def _backstop_already_fired(alert_log: list[dict], nowpt: datetime, hhmm: str) -
 
 def _build_urls(cfg: dict, latest: dict) -> list[str]:
     urls = []
-    for name in ("ticketmaster", "seatgeek", "etc_scraper"):
+    for name in ("ticketmaster", "seatgeek", "vivid_seats", "etc_scraper"):
         u = cfg.get("sources", {}).get(name, {}).get("url")
         if u:
             urls.append(u)
     return urls
+
+
+def _manual_check_block(cfg: dict) -> str:
+    """Block of links the user should eyeball — sources our pipeline doesn't track via API."""
+    items: list[tuple[str, str]] = []
+    tm_url = cfg.get("sources", {}).get("ticketmaster", {}).get("url")
+    if tm_url:
+        items.append(("Ticketmaster", tm_url))
+    axs = cfg.get("links", {}).get("axs_resale")
+    if axs:
+        items.append(("AXS resale", axs))
+    if not items:
+        return ""
+    lines = ["👀 MANUAL CHECK (not tracked via API):"]
+    width = max(len(name) for name, _ in items)
+    for name, url in items:
+        lines.append(f"  {name.ljust(width)}  {url}")
+    return "\n".join(lines) + "\n\n"
+
+
+_NO_API_SOURCES = {"ticketmaster", "seatgeek"}
 
 
 def _format_body(latest: dict, headline: str, urls: list[str]) -> str:
@@ -345,7 +375,10 @@ def _format_body(latest: dict, headline: str, urls: list[str]) -> str:
                 f"  {src}: ${v['price']:.0f}" + (f" ({lc} listings)" if lc is not None else "")
             )
         elif v.get("ok"):
-            lines.append(f"  {src}: no listings yet")
+            if src in _NO_API_SOURCES:
+                lines.append(f"  {src}: not exposed via public API")
+            else:
+                lines.append(f"  {src}: no listings yet")
         else:
             lines.append(f"  {src}: error")
     trend = latest.get("trend") or {}
