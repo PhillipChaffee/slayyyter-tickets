@@ -1,37 +1,37 @@
 {
-  "as_of": "2026-05-13T12:26:20Z",
+  "as_of": "2026-05-13T18:12:54Z",
   "lowest_anywhere": {
-    "price": 333.49,
-    "source": "vivid_seats"
+    "price": 350.0,
+    "source": "etc_scraper"
   },
   "by_source": {
     "ticketmaster": {
       "price": null,
       "listing_count": null,
       "ok": true,
-      "ts": "2026-05-13T12:26:19Z"
+      "ts": "2026-05-13T18:12:53Z"
     },
     "seatgeek": {
       "price": null,
       "listing_count": null,
       "ok": true,
-      "ts": "2026-05-13T12:26:19Z"
+      "ts": "2026-05-13T18:12:54Z"
     },
     "vivid_seats": {
-      "price": 333.49,
-      "listing_count": 15,
-      "ok": true,
-      "ts": "2026-05-13T12:26:19Z"
+      "price": null,
+      "listing_count": null,
+      "ok": false,
+      "ts": "2026-05-13T18:12:54Z"
     },
     "etc_scraper": {
       "price": 350.0,
       "listing_count": null,
       "ok": true,
-      "ts": "2026-05-13T12:26:20Z"
+      "ts": "2026-05-13T18:12:54Z"
     }
   },
   "trend": {
-    "vs_24h_ago": -0.047171428571428545,
-    "vs_7d_median": -0.047171428571428545
+    "vs_24h_ago": 0.046181437752204416,
+    "vs_7d_median": 0.0
   }
 }
