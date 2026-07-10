@@ -1400,5 +1400,21 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-07-10T17:25:10Z",
+    "rule": "daily_heartbeat",
+    "severity": "info",
+    "title": "Heartbeat 2026-07-10 \u2014 floor $287",
+    "metadata": {
+      "lowest": 287.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
