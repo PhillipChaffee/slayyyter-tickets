@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-15T08:51:41Z",
+  "as_of": "2026-08-15T09:46:35Z",
   "lowest_anywhere": {
     "price": 363.0,
     "source": "etc_scraper"
@@ -9,25 +9,25 @@
       "price": null,
       "listing_count": null,
       "ok": true,
-      "ts": "2026-08-15T08:51:40Z"
+      "ts": "2026-08-15T09:46:34Z"
     },
     "seatgeek": {
       "price": null,
       "listing_count": null,
       "ok": true,
-      "ts": "2026-08-15T08:51:41Z"
+      "ts": "2026-08-15T09:46:35Z"
     },
     "vivid_seats": {
       "price": null,
       "listing_count": null,
       "ok": false,
-      "ts": "2026-08-15T08:51:41Z"
+      "ts": "2026-08-15T09:46:35Z"
     },
     "etc_scraper": {
       "price": 363.0,
       "listing_count": null,
       "ok": true,
-      "ts": "2026-08-15T08:51:41Z"
+      "ts": "2026-08-15T09:46:35Z"
     }
   },
   "trend": {
