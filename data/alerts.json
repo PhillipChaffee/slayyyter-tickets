@@ -2073,5 +2073,38 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-08-20T16:23:13Z",
+    "rule": "midcampaign_checkin",
+    "severity": "info",
+    "title": "Mid-campaign check-in (2026-08-20)",
+    "metadata": {
+      "checkin_date": "2026-08-20",
+      "lowest": 341.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
+  },
+  {
+    "ts": "2026-08-20T16:23:13Z",
+    "rule": "daily_heartbeat",
+    "severity": "info",
+    "title": "Heartbeat 2026-08-20 \u2014 floor $341",
+    "metadata": {
+      "lowest": 341.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
