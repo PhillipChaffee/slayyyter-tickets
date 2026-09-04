@@ -2330,5 +2330,39 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-04T16:18:09Z",
+    "rule": "trend_7d",
+    "severity": "info",
+    "title": "Slayyyter $305 (vs 7d median $384, -21%)",
+    "metadata": {
+      "lowest": 305.0,
+      "median_7d": 384.0,
+      "pct": -0.20572916666666666
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
+  },
+  {
+    "ts": "2026-09-04T16:18:09Z",
+    "rule": "daily_heartbeat",
+    "severity": "info",
+    "title": "Heartbeat 2026-09-04 \u2014 floor $305",
+    "metadata": {
+      "lowest": 305.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
