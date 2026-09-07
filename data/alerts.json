@@ -2448,5 +2448,38 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-07T19:10:42Z",
+    "rule": "last_48h_backstop",
+    "severity": "critical",
+    "title": "BACKSTOP 09:00 PT - best now: $312",
+    "metadata": {
+      "slot": "09:00",
+      "lowest": 312.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
+  },
+  {
+    "ts": "2026-09-07T19:10:42Z",
+    "rule": "daily_heartbeat",
+    "severity": "info",
+    "title": "Heartbeat 2026-09-07 \u2014 floor $312",
+    "metadata": {
+      "lowest": 312.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
