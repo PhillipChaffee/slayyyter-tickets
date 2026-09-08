@@ -2481,5 +2481,22 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-08T00:03:18Z",
+    "rule": "last_48h_backstop",
+    "severity": "critical",
+    "title": "BACKSTOP 17:00 PT - best now: $300",
+    "metadata": {
+      "slot": "17:00",
+      "lowest": 300.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
