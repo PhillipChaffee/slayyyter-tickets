@@ -2516,5 +2516,56 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-08T17:18:09Z",
+    "rule": "trend_7d",
+    "severity": "info",
+    "title": "Slayyyter $291 (vs 7d median $347, -16%)",
+    "metadata": {
+      "lowest": 291.0,
+      "median_7d": 347.0,
+      "pct": -0.16138328530259366
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
+  },
+  {
+    "ts": "2026-09-08T17:18:09Z",
+    "rule": "last_48h_backstop",
+    "severity": "critical",
+    "title": "BACKSTOP 09:00 PT - best now: $291",
+    "metadata": {
+      "slot": "09:00",
+      "lowest": 291.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
+  },
+  {
+    "ts": "2026-09-08T17:18:09Z",
+    "rule": "daily_heartbeat",
+    "severity": "info",
+    "title": "Heartbeat 2026-09-08 \u2014 floor $291",
+    "metadata": {
+      "lowest": 291.0
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
