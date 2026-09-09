@@ -2602,5 +2602,23 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-09T04:55:57Z",
+    "rule": "threshold_single_only",
+    "severity": "warn",
+    "title": "Slayyyter $129 [QTY UNKNOWN]",
+    "metadata": {
+      "lowest": 129.0,
+      "source": "etc_scraper",
+      "signal": "UNKNOWN"
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
