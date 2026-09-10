@@ -2760,5 +2760,23 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-10T23:33:11Z",
+    "rule": "trend_7d",
+    "severity": "info",
+    "title": "Slayyyter $238 (vs 7d median $310, -23%)",
+    "metadata": {
+      "lowest": 238.0,
+      "median_7d": 310.0,
+      "pct": -0.23225806451612904
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
