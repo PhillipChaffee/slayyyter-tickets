@@ -2848,5 +2848,21 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-12T16:16:59Z",
+    "rule": "daily_heartbeat",
+    "severity": "info",
+    "title": "Heartbeat 2026-09-12",
+    "metadata": {
+      "lowest": null
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
