@@ -1,30 +1,30 @@
 {
-  "as_of": "2026-09-17T06:17:39Z",
+  "as_of": "2026-09-17T11:54:39Z",
   "lowest_anywhere": null,
   "by_source": {
     "ticketmaster": {
       "price": null,
       "listing_count": null,
       "ok": true,
-      "ts": "2026-09-17T06:17:38Z"
+      "ts": "2026-09-17T11:54:38Z"
     },
     "seatgeek": {
       "price": null,
       "listing_count": null,
       "ok": false,
-      "ts": "2026-09-17T06:17:38Z"
+      "ts": "2026-09-17T11:54:38Z"
     },
     "vivid_seats": {
       "price": null,
       "listing_count": null,
       "ok": false,
-      "ts": "2026-09-17T06:17:38Z"
+      "ts": "2026-09-17T11:54:38Z"
     },
     "etc_scraper": {
       "price": null,
       "listing_count": null,
       "ok": false,
-      "ts": "2026-09-17T06:17:39Z"
+      "ts": "2026-09-17T11:54:39Z"
     }
   },
   "trend": {
