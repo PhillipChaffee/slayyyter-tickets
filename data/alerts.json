@@ -2976,5 +2976,21 @@
         "error": null
       }
     ]
+  },
+  {
+    "ts": "2026-09-20T17:07:42Z",
+    "rule": "daily_heartbeat",
+    "severity": "info",
+    "title": "Heartbeat 2026-09-20",
+    "metadata": {
+      "lowest": null
+    },
+    "deliveries": [
+      {
+        "channel": "ntfy",
+        "ok": true,
+        "error": null
+      }
+    ]
   }
 ]
